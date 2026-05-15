@@ -1,9 +1,6 @@
 package bg.tu_varna.sit.recruitment_agency.matching.api.opportunity.models.event;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.UUID;
 
@@ -11,6 +8,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class ApplicationSubmittedEvent {
     private UUID applicationId;
     private UUID candidateId;

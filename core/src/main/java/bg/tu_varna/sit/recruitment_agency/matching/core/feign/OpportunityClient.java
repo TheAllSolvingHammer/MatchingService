@@ -7,9 +7,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.UUID;
 
-@FeignClient(name = "opportunityservice")
+@FeignClient(name = "Opportunity-Service", contextId = "matchingOpportunityClient")
 public interface OpportunityClient {
 
-    @GetMapping("/api/v1/opportunities/{id}")
+    @GetMapping("/api/v1/opportunities/get/{id}")
     OpportunityOutput getOpportunityById(@PathVariable("id") UUID id);
 }

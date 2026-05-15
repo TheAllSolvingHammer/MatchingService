@@ -3,14 +3,12 @@ package bg.tu_varna.sit.recruitment_agency.matching.core.feign;
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 @Configuration
-@EnableFeignClients(basePackages = "bg.tu_varna.sit.recruitment_agency.matching.core.feign")
 public class FeignConfig {
 
     @Bean
