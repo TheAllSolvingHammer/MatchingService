@@ -13,6 +13,7 @@
     <description>web</description>
     <packaging>jar</packaging>
     <dependencies>
+        <!-- Internal Modules -->
         <dependency>
             <groupId>bg.tu_varna.sit.recruitment_agency.matching</groupId>
             <artifactId>core</artifactId>
@@ -22,6 +23,36 @@
             <groupId>bg.tu_varna.sit.recruitment_agency.matching</groupId>
             <artifactId>api</artifactId>
             <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+
+        <!-- Swagger -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>3.0.2</version>
+        </dependency>
+
+        <!-- Security (REMOVED manual <version>4.0.3</version> so it matches the parent) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        </dependency>
+
+        <!-- JWT (Versions are okay here since Spring Boot doesn't manage JJWT) -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>0.13.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>0.13.0</version>
+            <scope>runtime</scope>
         </dependency>
     </dependencies>
     <build>
