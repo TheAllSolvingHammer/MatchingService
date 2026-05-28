@@ -14,7 +14,6 @@ import bg.tu_varna.sit.recruitment_agency.matching.persistence.entities.MatchRes
 import bg.tu_varna.sit.recruitment_agency.matching.persistence.repositories.MatchResultRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,13 +25,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class MatchingProcessor {
-    public @Nullable Object getTopMatchesForJob(UUID opportunityId) {
-        return null;
-    }
-
-    public @Nullable Object getTopMatchesForCandidate(UUID candidateId) {
-        return null;
-    }
 
     private final ProfileClient profileClient;
     private final OpportunityClient opportunityClient;
@@ -44,44 +36,56 @@ public class MatchingProcessor {
     public void executeMatching(ApplicationSubmittedEvent event) {
         log.info("Starting matching process for Application: {}", event.getApplicationId());
 
-        // 1. Fetch data from other services via Feign
-        GetCandidateByIDInput input = GetCandidateByIDInput
-                .builder()
-                .id(event.getApplicationId())
-                .build();
-        CandidateOutput candidate = profileClient.getCandidateProfile(input);
-        OpportunityOutput opportunity = opportunityClient.getOpportunityById(event.getOpportunityId());
+        try {
+            GetCandidateByIDInput input = GetCandidateByIDInput
+                    .builder()
+                    .id(event.getCandidateId())
+                    .build();
 
-        // 2. Manual Scoring (Tag intersection)
-        double manualScore = calculateManualScore(candidate.getSkillNames(), opportunity.getRequirementsSet());
+            CandidateOutput candidate = profileClient.getCandidateProfile(input);
+            OpportunityOutput opportunity = opportunityClient.getOpportunityById(event.getOpportunityId());
 
-        // 3. AI Scoring (CV vs Description)
-        String cvText = cvParserService.extractTextFromUrl(event.getCvUrl());
-        AiMatchResult aiResult = geminiService.analyzeMatch(cvText, opportunity.getDescription());
+            // 2. Manual Scoring (Tag/Skill intersection)
+            double manualScore = calculateManualScore(candidate.getSkillNames(), opportunity.getRequirementsSet());
+            log.info("Calculated Manual Score: {}%", manualScore);
 
-        // 4. Calculate Final Weighted Score (60% Manual, 40% AI)
-        double finalScore = (manualScore * 0.6) + (aiResult.getScore() * 0.4);
+            // 3. AI Scoring (CV vs Description)
+            String cvText = cvParserService.extractTextFromUrl(event.getCvUrl());
+            AiMatchResult aiResult = geminiService.analyzeMatch(cvText, opportunity.getDescription());
+            log.info("Calculated AI Score: {}%", aiResult.getScore());
 
-        // 5. Persist Results
-        MatchResultEntity result = MatchResultEntity.builder()
-                .opportunityId(event.getOpportunityId())
-                .candidateId(event.getCandidateId())
-                .manualScore(manualScore)
-                .aiScore(aiResult.getScore())
-                .aiReasoning(aiResult.getReason())
-                .finalScore(finalScore)
-                .calculatedAt(LocalDateTime.now())
-                .build();
+            // 4. Calculate Final Weighted Score (60% Manual, 40% AI)
+            double finalScore = (manualScore * 0.6) + (aiResult.getScore() * 0.4);
 
-        matchResultRepository.save(result);
-        log.info("Matching completed. Final Score: {}%", String.format("%.2f", finalScore));
+            // 5. Persist Results
+            MatchResultEntity result = MatchResultEntity.builder()
+                    .opportunityId(event.getOpportunityId())
+                    .candidateId(event.getCandidateId())
+                    .manualScore(manualScore)
+                    .aiScore(aiResult.getScore())
+                    .aiReasoning(aiResult.getReason())
+                    .finalScore(finalScore)
+                    .calculatedAt(LocalDateTime.now())
+                    .build();
+
+            matchResultRepository.save(result);
+            log.info("Matching completed successfully. Final Score: {}%", String.format("%.2f", finalScore));
+
+        } catch (Exception e) {
+            log.error("Failed to process matching for application {}: {}", event.getApplicationId(), e.getMessage());
+        }
     }
 
-    private double calculateManualScore(Set<UUID> candidateSkills, Set<RequirementView> jobRequirements) {
-        if (jobRequirements.isEmpty()) return 100.0;
+    /**
+     * Calculates what percentage of the job's required skills the candidate possesses.
+     */
+    private double calculateManualScore(Set<UUID> candidateSkillIds, Set<RequirementView> jobRequirements) {
+        if (jobRequirements == null || jobRequirements.isEmpty()) {
+            return 100.0;
+        }
 
         long matchedCount = jobRequirements.stream()
-                .filter(req -> candidateSkills.contains(req.getSkillId()))
+                .filter(req -> candidateSkillIds.contains(req.getSkillId()))
                 .count();
 
         return (double) matchedCount / jobRequirements.size() * 100;
